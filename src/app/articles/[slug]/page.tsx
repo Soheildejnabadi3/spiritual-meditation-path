@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
+import type { Metadata } from "next"
 
 // This would typically come from a database or CMS
 const articles = {
@@ -119,8 +120,32 @@ const articles = {
   },
 }
 
-export default function ArticlePage({ params }: { params: { slug: string } }) {
-  const article = articles[params.slug as keyof typeof articles]
+type Params = { slug: string }
+
+export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+  // Properly await the params object
+  const resolvedParams = await Promise.resolve(params)
+  const slug = resolvedParams.slug
+  const article = articles[slug as keyof typeof articles]
+
+  if (!article) {
+    return {
+      title: "Article Not Found - SpiritualPath",
+      description: "The requested article could not be found.",
+    }
+  }
+
+  return {
+    title: `${article.title} - SpiritualPath`,
+    description: article.content.substring(0, 160).replace(/<[^>]*>/g, ""),
+  }
+}
+
+export default async function ArticlePage({ params }: { params: Params }) {
+  // Properly await the params object
+  const resolvedParams = await Promise.resolve(params)
+  const slug = resolvedParams.slug
+  const article = articles[slug as keyof typeof articles]
 
   if (!article) {
     return <div>Article not found</div>
@@ -129,9 +154,9 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
       <div className="max-w-4xl mx-auto px-4 py-12">
-        <Link href="/" className="inline-flex items-center text-purple-700 hover:text-purple-900 mb-8">
+        <Link href="/articles" className="inline-flex items-center text-purple-700 hover:text-purple-900 mb-8">
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Home
+          Back to Articles
         </Link>
 
         <div className="relative h-[400px] w-full mb-8 rounded-2xl overflow-hidden">
@@ -147,7 +172,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
         </div>
 
         <div
-          className="prose prose-lg max-w-none prose-headings:text-purple-900 prose-a:text-purple-700 prose-strong:text-purple-800"
+          className="prose prose-lg max-w-none prose-headings:text-purple-900 prose-h2:text-2xl prose-h2:font-bold prose-h2:mt-8 prose-h2:mb-4 prose-h3:text-xl prose-h3:font-semibold prose-h3:mt-6 prose-h3:mb-3 prose-a:text-purple-700 prose-strong:text-purple-800 prose-ul:my-6 prose-li:my-2"
           dangerouslySetInnerHTML={{ __html: article.content }}
         />
 
